@@ -60,10 +60,10 @@ func New(dir string) (*Document, error) {
 
 //Document gets a document from a collection
 func (c *Collection) Document(key string) *Document {
-	if c.Error() != "" {
+	if is, err := c.Check(); is {
 		return &Document{
 			dir: "",
-			err: fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %s", c.err.Error()),
+			err: fmt.Errorf("sometething has failled previously, use c.Check() to check for errors: %s", err.Error()),
 		}
 	}
 	if key == "" {
@@ -84,10 +84,10 @@ func (c *Collection) Document(key string) *Document {
 
 //Collection gets a collction from in a document
 func (d *Document) Collection(name string) *Collection {
-	if err := d.Error(); err != "" {
+	if is, err := d.Check(); is {
 		return &Collection{
 			dir: "",
-			err: fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %s", d.err.Error()),
+			err: fmt.Errorf("sometething has failled previously, use c.Check() to check for errors: %s", err.Error()),
 		}
 	}
 
@@ -111,8 +111,8 @@ func (d *Document) Collection(name string) *Collection {
 // the [collection] specified with the [resource] name given
 func (d *Document) Write(v interface{}) error {
 	// check if there was an error
-	if error := d.Error(); error != "" {
-		return fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %s", error)
+	if is, err := d.Check(); is {
+		return fmt.Errorf("sometething has failled previously, use c.Check() to check for errors: %s", err.Error())
 	}
 
 	// ensure there is a place to save record
@@ -156,8 +156,8 @@ func (d *Document) Write(v interface{}) error {
 // Read a record from the database
 func (d *Document) Read(v interface{}) error {
 	// check if there was an error
-	if error := d.Error(); error != "" {
-		return fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %v", error)
+	if is, err := d.Check(); is {
+		return fmt.Errorf("sometething has failled previously, use c.Check() to check for errors: %s", err.Error())
 	}
 
 	// ensure there is a place to save record
@@ -190,12 +190,12 @@ func getDocuments(dir string, start, end int) ([]*Document, error) {
 		return nil, err
 	}
 
-  // check to see if collection (directory) exists
+	// check to see if collection (directory) exists
 	if _, err := os.Stat(dir); err != nil {
 		fmt.Println("2: ", err)
 		return nil, err
 	}
-  
+
 	// read all the files in the transaction.Collection
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
@@ -225,16 +225,16 @@ func getDocuments(dir string, start, end int) ([]*Document, error) {
 
 // GetAllDocuments gets all documents in a collection.
 func (c *Collection) GetAllDocuments() ([]*Document, error) {
-	if error := c.Error(); error != "" {
-		return nil, fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %v", error)
+	if is, err := c.Check(); is {
+		return nil, fmt.Errorf("sometething has failled previously, use c.Check() to check for errors: %s", err.Error())
 	}
 	return getDocuments(c.dir, 0, 0)
 }
 
 // GetDocuments gets documents in a collection starting from start til end, if start
 func (c *Collection) GetDocuments(start, end int) ([]*Document, error) {
-	if error := c.Error(); error != "" {
-		return nil, fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %v", error)
+	if is, err := c.Check(); is {
+		return nil, fmt.Errorf("sometething has failled previously, use c.Check() to check for errors: %s", err.Error())
 	}
 	return getDocuments(c.dir, start, end)
 }
@@ -244,11 +244,10 @@ func delete(dir string) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-  // if fi is nil or error is not nil return
+	// if fi is nil or error is not nil return
 	if _, err := os.Stat(dir); err != nil {
 		return err
 	}
-
 
 	return os.RemoveAll(dir)
 }
@@ -256,8 +255,8 @@ func delete(dir string) error {
 // Delete locks that database and removes the document including all of its sub documents
 func (d *Document) Delete() error {
 	// check if there was an error
-	if error := d.Error(); error != "" {
-		return fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %v", error)
+	if is, err := d.Check(); is {
+		return fmt.Errorf("sometething has failled previously, use c.Check() to check for errors: %s", err.Error())
 	}
 
 	return delete(d.dir)
@@ -266,28 +265,29 @@ func (d *Document) Delete() error {
 // Delete removes a collection and all of its childeren
 func (c *Collection) Delete() error {
 	// check if there was an error
-	if error := c.Error(); error != "" {
-		return fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %v", error)
+	if is, err := c.Check(); is {
+		return fmt.Errorf("sometething has failled previously, use c.Check() to check for errors: %s", err.Error())
 	}
 
 	return delete(c.dir)
 }
 
-//Error if there is an error while getting the collection
-func (c *Collection) Error() string {
+//Check if there is an error while getting the collection
+func (c *Collection) Check() (bool, error) {
 	if c.err != nil {
-		return c.err.Error()
+		return true, c.err
 	}
-	
-  return ""
+
+	return false, nil
 }
 
-//Error if there is an error while getting the document
-func (d *Document) Error() string {
+//Check if there is an error while getting the document
+func (d *Document) Check() (bool, error) {
 	if d.err != nil {
-		return d.err.Error()
+		return true, d.err
 	}
-	return ""
+
+	return false, nil
 }
 
 func statOld(path string) (fi os.FileInfo, err error) {
