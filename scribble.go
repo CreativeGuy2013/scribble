@@ -11,7 +11,7 @@ import (
 )
 
 // Version is the current version of the project
-const Version = "3.0.1"
+const Version = "4.0.0"
 
 type (
 	//Collection a collection of documents
@@ -22,11 +22,14 @@ type (
 
 	//Document a single document which can have sub collections
 	Document struct {
-		mutex   sync.Mutex
-		mutexes map[string]*sync.Mutex
-		dir     string
-		err     error
+		dir string
+		err error
 	}
+)
+
+var (
+	mutex       = &sync.Mutex{}
+	fileMutexes = make(map[string]*sync.Mutex)
 )
 
 // New creates a new scribble database at the desired directory location, and
@@ -36,8 +39,7 @@ func New(dir string) (*Document, error) {
 	dir = filepath.Clean(dir)
 
 	document := Document{
-		dir:     dir,
-		mutexes: make(map[string]*sync.Mutex),
+		dir: dir,
 	}
 
 	// if the collection doesn't exist create it
@@ -58,25 +60,23 @@ func New(dir string) (*Document, error) {
 
 //Document gets a document from a collection
 func (c *Collection) Document(key string) *Document {
+	if c.Error() != "" {
+		return &Document{
+			dir: "",
+			err: fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %s", c.err.Error()),
+		}
+	}
 	if key == "" {
 		return &Document{
-			dir:     c.dir,
-			mutexes: make(map[string]*sync.Mutex),
-			err:     fmt.Errorf("key for document is empty"),
-		}
-	} else if c.err != nil {
-		return &Document{
-			dir:     c.dir,
-			mutexes: make(map[string]*sync.Mutex),
-			err:     c.err,
+			dir: "",
+			err: fmt.Errorf("key for document is empty"),
 		}
 	}
 
 	dir := filepath.Join(c.dir, key)
 
 	document := Document{
-		dir:     dir,
-		mutexes: make(map[string]*sync.Mutex),
+		dir: dir,
 	}
 
 	return &document
@@ -84,15 +84,17 @@ func (c *Collection) Document(key string) *Document {
 
 //Collection gets a collction from in a document
 func (d *Document) Collection(name string) *Collection {
+	if err := d.Error(); err != "" {
+		return &Collection{
+			dir: "",
+			err: fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %s", d.err.Error()),
+		}
+	}
+
 	if name == "" {
 		return &Collection{
-			dir: d.dir,
+			dir: "",
 			err: fmt.Errorf("name for collection is empty"),
-		}
-	} else if d.err != nil {
-		return &Collection{
-			dir: d.dir,
-			err: d.err,
 		}
 	}
 
@@ -109,8 +111,8 @@ func (d *Document) Collection(name string) *Collection {
 // the [collection] specified with the [resource] name given
 func (d *Document) Write(v interface{}) error {
 	// check if there was an error
-	if err := d.Check(); err != nil {
-		return err
+	if error := d.Error(); error != "" {
+		return fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %s", error)
 	}
 
 	// ensure there is a place to save record
@@ -124,11 +126,10 @@ func (d *Document) Write(v interface{}) error {
 		}
 	}
 
-	mutex := d.getOrCreateMutex()
+	mutex := getMutex(d.dir)
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	//
 	dir := d.dir
 	fnlPath := filepath.Join(dir, "doc.gob")
 	tmpPath := fnlPath + ".tmp"
@@ -138,13 +139,11 @@ func (d *Document) Write(v interface{}) error {
 		return err
 	}
 
-	//
 	b, err := os.Create(tmpPath)
 	if err != nil {
 		return err
 	}
 
-	//
 	err = gob.NewEncoder(b).Encode(v)
 	if err != nil {
 		return err
@@ -157,8 +156,8 @@ func (d *Document) Write(v interface{}) error {
 // Read a record from the database
 func (d *Document) Read(v interface{}) error {
 	// check if there was an error
-	if err := d.Check(); err != nil {
-		return err
+	if error := d.Error(); error != "" {
+		return fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %v", error)
 	}
 
 	// ensure there is a place to save record
@@ -184,101 +183,114 @@ func (d *Document) Read(v interface{}) error {
 	return gob.NewDecoder(b).Decode(v)
 }
 
-// GetDocuments gets all documents in a collection.
-func (c *Collection) GetDocuments() ([]*Document, error) {
-	// check if there was an error
-	if err := c.Check(); err != nil {
+// GetDocuments gets documents in a collection starting from start til end, if start
+func getDocuments(dir string, start, end int) ([]*Document, error) {
+	// check to see if collection (directory) exists
+	if file, err := os.Stat(dir); err != nil || !file.IsDir() {
 		return nil, err
 	}
 
-	// ensure there is a collection to read
-	if c.dir == "" {
-		return nil, fmt.Errorf("missing collection - unable to record location")
-	}
-
-	//
-	dir := c.dir
-
-	// check to see if collection (directory) exists
+  // check to see if collection (directory) exists
 	if _, err := os.Stat(dir); err != nil {
 		fmt.Println("2: ", err)
 		return nil, err
 	}
+  
+	// read all the files in the transaction.Collection
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return nil, fmt.Errorf("could not open the documents: %s", err.Error())
+	}
 
-	// read all the files in the transaction.Collection; an error here just means
-	// the collection is either empty or doesn't exist
-	files, _ := ioutil.ReadDir(dir)
+	if end != 0 {
+		// end > len(files) will throw an runtime error
+		if end > len(files) {
+			end = len(files)
+		}
+		// make only include the files that are requested
+		files = files[start:end]
+	}
 
-	// the files read from the database
-	var records []*Document
-
+	records := make([]*Document, len(files))
 	// iterate over each of the files, and add the resulting document to records
-	for _, file := range files {
-		// append read file
-		records = append(records, &Document{
-			dir:     filepath.Join(dir, file.Name()),
-			mutexes: make(map[string]*sync.Mutex),
-		})
+	for i, file := range files {
+		records[i] = &Document{
+			dir: filepath.Join(dir, file.Name()),
+		}
 	}
 
 	// unmarhsal the read files as a comma delimeted byte array
 	return records, nil
 }
 
-// Delete locks that database and removes the document including all of its sub documents
-func (d *Document) Delete() error {
-	// check if there was an error
-	if err := d.Check(); err != nil {
-		return err
+// GetAllDocuments gets all documents in a collection.
+func (c *Collection) GetAllDocuments() ([]*Document, error) {
+	if error := c.Error(); error != "" {
+		return nil, fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %v", error)
 	}
+	return getDocuments(c.dir, 0, 0)
+}
 
-	//
-	mutex := d.getOrCreateMutex()
+// GetDocuments gets documents in a collection starting from start til end, if start
+func (c *Collection) GetDocuments(start, end int) ([]*Document, error) {
+	if error := c.Error(); error != "" {
+		return nil, fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %v", error)
+	}
+	return getDocuments(c.dir, start, end)
+}
+
+func delete(dir string) error {
+	mutex := getMutex(dir)
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	//
-	dir := d.dir
-
-	// if fi is nil or error is not nil return
-	if _, err := os.Stat(filepath.Join(dir, "doc.gob")); err != nil {
+  // if fi is nil or error is not nil return
+	if _, err := os.Stat(dir); err != nil {
 		return err
 	}
 
+
 	return os.RemoveAll(dir)
+}
+
+// Delete locks that database and removes the document including all of its sub documents
+func (d *Document) Delete() error {
+	// check if there was an error
+	if error := d.Error(); error != "" {
+		return fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %v", error)
+	}
+
+	return delete(d.dir)
 }
 
 // Delete removes a collection and all of its childeren
 func (c *Collection) Delete() error {
 	// check if there was an error
-	if err := c.Check(); err != nil {
-		return err
+	if error := c.Error(); error != "" {
+		return fmt.Errorf("sometething has failled previously, use c.Error to check for errors: %v", error)
 	}
 
-	//
-	dir := c.dir
+	return delete(c.dir)
+}
 
-	// if fi is nil or error is not nil return
-	if _, err := os.Stat(dir); err != nil {
-		return err
+//Error if there is an error while getting the collection
+func (c *Collection) Error() string {
+	if c.err != nil {
+		return c.err.Error()
 	}
-
-	return os.RemoveAll(dir)
+	
+  return ""
 }
 
-//Check if there is an error while getting the collection
-func (c *Collection) Check() error {
-	return c.err
+//Error if there is an error while getting the document
+func (d *Document) Error() string {
+	if d.err != nil {
+		return d.err.Error()
+	}
+	return ""
 }
 
-//Check if there is an error while getting the document
-func (d *Document) Check() error {
-	return d.err
-}
-
-//
 func statOld(path string) (fi os.FileInfo, err error) {
-
 	// check for dir, if path isn't a directory check to see if it's a file
 	if fi, err = os.Stat(path); os.IsNotExist(err) {
 		fi, err = os.Stat(filepath.Join(path, "doc.gob"))
@@ -287,20 +299,17 @@ func statOld(path string) (fi os.FileInfo, err error) {
 	return
 }
 
-// getOrCreateMutex creates a new collection specific mutex any time a collection
-// is being modfied to avoid unsafe operations
-func (d *Document) getOrCreateMutex() *sync.Mutex {
+// getMutex gets a mutex for a specific dir
+func getMutex(dir string) *sync.Mutex {
 
-	d.mutex.Lock()
-	defer d.mutex.Unlock()
-
-	m, ok := d.mutexes[d.dir]
+	mutex.Lock()
+	defer mutex.Unlock()
+	m, ok := fileMutexes[dir]
 
 	// if the mutex doesn't exist make it
 	if !ok {
-		m = &sync.Mutex{}
-		d.mutexes[d.dir] = m
+		fileMutexes[dir] = &sync.Mutex{}
+		return fileMutexes[dir]
 	}
-
 	return m
 }

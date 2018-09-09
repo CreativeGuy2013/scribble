@@ -13,7 +13,7 @@ Install using `go get github.com/creativeguy2013/scribble`.
 ### Usage
 
 ```go
-// a new scribble driver, providing the directory where it will be writing to
+// a new scribble document, providing the directory where it will be writing to
 db, err := scribble.New(dir)
 if err != nil {
   fmt.Println("Error", err)
@@ -38,7 +38,7 @@ if err := onefishDocument.Read(&onefish); err != nil {
 }
 
 // Read all fish from the database, returning an array of documents.
-records, err := fishCollection.ReadAll()
+records, err := fishCollection.GetAlDocuments()
 if err != nil {
   fmt.Println("Error", err)
 }
@@ -51,6 +51,24 @@ for _, f := range records {
   }
   fishies = append(fishies, fishFound)
 }
+
+// Read a select view of the fish from the database, in this case everything from index 1 to 3
+records, err = fishCollection.GetDocuments(1, 3)
+if err != nil {
+	fmt.Println("Error 5", err)
+}
+// records has length 2
+fmt.Println(len(records))
+
+fishies = []Fish{}
+for _, f := range records {
+	fishFound := Fish{}
+	if err := f.Read(&fishFound); err != nil {
+		fmt.Println("Error 6", err)
+	}
+	fishies = append(fishies, fishFound)
+}
+fmt.Println(fishies)
 
 // Delete a fish from the database
 if err := onefishDocument.Delete(); err != nil {
@@ -73,15 +91,13 @@ firstbabyDocument := Document("firstbaby")
 It is also possible to store a subcollection and data in the same document:
 
 ```go
-skrillex := db.Collection("artists").Document("skrillex")
+starFish := db.Collection("fish").Document("starFish")
 
-skrillex.Write(map[string]bool{
-  "IsMusicGood": true,
+starFish.Write(map[string]bool{
+  "isAwesome": true,
 })
 
-skrillex.Collection("songs").Document("bangarang").Write(map[string]string{
-  "Movie": "Deadpool 2",
-})
+starFish.Collection("properties").Document("arms").Write(6)
 ```
 
 
@@ -91,6 +107,6 @@ skrillex.Collection("songs").Document("bangarang").Write(map[string]string{
 
 ## Todo/Doing
 - Support for windows
-- Better support for concurrency
 - More methods to allow different types of reads/writes
 - More tests (you can never have enough!)
+- loading part into memory/caching
