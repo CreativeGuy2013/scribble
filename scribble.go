@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sync"
 )
 
@@ -179,8 +180,21 @@ func (d *Document) Read(v interface{}) error {
 		return err
 	}
 
-	// unmarshal data
-	return gob.NewDecoder(b).Decode(v)
+	// decode data
+	dec := gob.NewDecoder(b)
+	if rv, ok := v.(reflect.Value); ok {
+		err = dec.DecodeValue(rv)
+		if err == nil {
+			return err
+		}
+
+	} else {
+		err = dec.Decode(v)
+		if err == nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // GetDocuments gets documents in a collection starting from start til end, if start

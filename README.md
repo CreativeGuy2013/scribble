@@ -3,6 +3,8 @@ Scribble (FireScribble Edition) [![GoDoc](https://godoc.org/github.com/boltdb/bo
 
 A tiny GOB based database in Golang - behaviour is very similar to Google Cloud Firestore
 
+Decode into reflect.Value is also supported
+
 **Note**
 If you would rather use JSON instad of GOB please use a version prior to 3.0.0. You will have less functionality and a slower db but it will be human readable.
 
