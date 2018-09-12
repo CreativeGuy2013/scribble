@@ -312,7 +312,7 @@ func (c *Collection) PreGen() (bool, error) {
 
 	_, err := os.Stat(c.dir)
 	if os.IsNotExist(err) {
-		os.Create(c.dir)
+		os.MkdirAll(c.dir, 0755)
 		return false, nil
 	}
 
