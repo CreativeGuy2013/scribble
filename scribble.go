@@ -304,13 +304,42 @@ func (d *Document) Check() (bool, error) {
 	return false, nil
 }
 
-func statOld(path string) (fi os.FileInfo, err error) {
-	// check for dir, if path isn't a directory check to see if it's a file
-	if fi, err = os.Stat(path); os.IsNotExist(err) {
-		fi, err = os.Stat(filepath.Join(path, "doc.gob"))
+//PreGen does a check to see if there is an error while getting the collection and make them if they dont exist yet.
+func (c *Collection) PreGen() (bool, error) {
+	if c.err != nil {
+		return true, c.err
 	}
 
-	return
+	_, err := os.Stat(c.dir)
+	if err == os.ErrNotExist {
+		os.Create(c.dir)
+		return false, nil
+	}
+
+	if err != nil {
+		return true, err
+	}
+
+	return false, nil
+}
+
+//PreGen does a check to see if there is an error while getting the documents and make them if they dont exist yet.
+func (d *Document) PreGen() (bool, error) {
+	if d.err != nil {
+		return true, d.err
+	}
+
+	_, err := os.Stat(d.dir)
+	if err == os.ErrNotExist {
+		os.Create(filepath.Join(d.dir, "doc.gob"))
+		return false, nil
+	}
+
+	if err != nil {
+		return true, err
+	}
+
+	return false, nil
 }
 
 // getMutex gets a mutex for a specific dir
