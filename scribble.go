@@ -311,7 +311,7 @@ func (c *Collection) PreGen() (bool, error) {
 	}
 
 	_, err := os.Stat(c.dir)
-	if err == os.ErrNotExist {
+	if os.IsNotExist(err) {
 		os.Create(c.dir)
 		return false, nil
 	}
@@ -330,7 +330,7 @@ func (d *Document) PreGen() (bool, error) {
 	}
 
 	_, err := os.Stat(d.dir)
-	if err == os.ErrNotExist {
+	if os.IsNotExist(err) {
 		os.Create(filepath.Join(d.dir, "doc.gob"))
 		return false, nil
 	}
