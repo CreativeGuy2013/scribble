@@ -1,6 +1,7 @@
 package scribble
 
 import (
+	"math/rand"
 	"os"
 	"testing"
 )
@@ -213,4 +214,64 @@ func destroyFish(name string) error {
 // destroy all fish
 func destroySchool() error {
 	return db.Collection(collection).Delete()
+}
+
+func BenchmarkWrite(b *testing.B) {
+	os.RemoveAll("./deep")
+
+	createDB()
+
+	data := generateData(b.N)
+	collection := db.Collection("fish")
+
+	b.ResetTimer()
+
+	for x, d := range data {
+		collection.Document(x).Write(d)
+	}
+
+	b.StopTimer()
+	os.RemoveAll("./deep")
+}
+
+func BenchmarkRead(b *testing.B) {
+	createDB()
+
+	data := generateData(b.N)
+	collection := db.Collection("fish")
+
+	for x := range data {
+		collection.Document(x).Write(data[x])
+	}
+
+	b.ResetTimer()
+
+	for x := range data {
+		collection.Document(x).Read(nil)
+	}
+
+	b.StopTimer()
+	os.RemoveAll("./deep")
+}
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randSeq(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
+}
+
+func generateData(n int) (data map[string]*Fish) {
+	data = make(map[string]*Fish, n)
+
+	for i := 0; i < n; i++ {
+		data[randSeq(10)] = &Fish{
+			Type: randSeq(128),
+		}
+	}
+
+	return
 }
