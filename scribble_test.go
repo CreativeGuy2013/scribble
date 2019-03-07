@@ -1,6 +1,7 @@
 package scribble
 
 import (
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"testing"
