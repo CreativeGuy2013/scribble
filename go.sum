@@ -1,2 +1,4 @@
 github.com/CreativeGuy2013/scribble v4.4.0+incompatible h1:9qch9Qf235YKXnE7cQpqqhR5+ybIJUQdFUlmjSbX2gA=
 github.com/CreativeGuy2013/scribble v4.4.0+incompatible/go.mod h1:8xYtxq3SAgMdBoOJbEQmqGJwpVoCNDgW43YDAPnu3QE=
+github.com/karrick/godirwalk v1.8.0 h1:ycpSqVon/QJJoaT1t8sae0tp1Stg21j+dyuS7OoagcA=
+github.com/karrick/godirwalk v1.8.0/go.mod h1:H5KPZjojv4lE+QYImBI8xVtrBRgYrIVsaRPx4tDPEn4=
