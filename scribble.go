@@ -17,12 +17,14 @@ const Version = "4.4.0"
 type (
 	//Collection a collection of documents
 	Collection struct {
-		dir string // the directory where scribble will create the database
+		ID  string
+		dir string
 		err error
 	}
 
 	//Document a single document which can have sub collections
 	Document struct {
+		ID  string
 		dir string
 		err error
 	}
@@ -77,6 +79,7 @@ func (c *Collection) Document(key string) *Document {
 	dir := filepath.Join(c.dir, key)
 
 	return &Document{
+		ID:  key,
 		dir: dir,
 	}
 }
@@ -100,6 +103,7 @@ func (d *Document) Collection(name string) *Collection {
 	dir := filepath.Join(d.dir, name)
 
 	return &Collection{
+		ID:  name,
 		dir: dir,
 	}
 }
@@ -167,18 +171,10 @@ func (d *Document) Read(v interface{}) error {
 		return fmt.Errorf("missing collection - no place to save record")
 	}
 
-	//
-	record := filepath.Join(d.dir, "doc.gob")
-
-	// check to see if file exists
-	if _, err = os.Stat(record); err != nil {
-		return err
-	}
-
 	var b *os.File
 
 	// read record from database
-	b, err = os.Open(record)
+	b, err = os.Open(filepath.Join(d.dir, "doc.gob"))
 	if err != nil {
 		return err
 	}
