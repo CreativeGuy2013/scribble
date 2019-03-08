@@ -64,7 +64,7 @@ func (c *Collection) Document(key string) *Document {
 	if is, err := c.Check(); is {
 		return &Document{
 			dir: "",
-			err: fmt.Errorf("sometething has failed previously, use c.Check() to check for errors: %s", err.Error()),
+			err: fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error()),
 		}
 	}
 	if key == "" {
@@ -88,7 +88,7 @@ func (d *Document) Collection(name string) *Collection {
 	if is, err := d.Check(); is {
 		return &Collection{
 			dir: "",
-			err: fmt.Errorf("sometething has failed previously, use c.Check() to check for errors: %s", err.Error()),
+			err: fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error()),
 		}
 	}
 
@@ -113,7 +113,7 @@ func (d *Document) Collection(name string) *Collection {
 func (d *Document) Write(v interface{}) error {
 	// check if there was an error
 	if is, err := d.Check(); is {
-		return fmt.Errorf("sometething has failed previously, use c.Check() to check for errors: %s", err.Error())
+		return fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error())
 	}
 
 	// ensure there is a place to save record
@@ -158,7 +158,7 @@ func (d *Document) Write(v interface{}) error {
 func (d *Document) Read(v interface{}) error {
 	// check if there was an error
 	if is, err := d.Check(); is {
-		return fmt.Errorf("sometething has failed previously, use c.Check() to check for errors: %s", err.Error())
+		return fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error())
 	}
 
 	// ensure there is a place to save record
@@ -240,7 +240,7 @@ func getDocuments(dir string, start, end int) ([]*Document, error) {
 // GetAllDocuments gets all documents in a collection.
 func (c *Collection) GetAllDocuments() ([]*Document, error) {
 	if is, err := c.Check(); is {
-		return nil, fmt.Errorf("sometething has failed previously, use c.Check() to check for errors: %s", err.Error())
+		return nil, fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error())
 	}
 	return getDocuments(c.dir, 0, 0)
 }
@@ -248,7 +248,7 @@ func (c *Collection) GetAllDocuments() ([]*Document, error) {
 // GetDocuments gets documents in a collection starting from start til end, if start
 func (c *Collection) GetDocuments(start, end int) ([]*Document, error) {
 	if is, err := c.Check(); is {
-		return nil, fmt.Errorf("sometething has failed previously, use c.Check() to check for errors: %s", err.Error())
+		return nil, fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error())
 	}
 	return getDocuments(c.dir, start, end)
 }
@@ -270,7 +270,7 @@ func delete(dir string) error {
 func (d *Document) Delete() error {
 	// check if there was an error
 	if is, err := d.Check(); is {
-		return fmt.Errorf("sometething has failed previously, use c.Check() to check for errors: %s", err.Error())
+		return fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error())
 	}
 
 	return delete(d.dir)
@@ -280,7 +280,7 @@ func (d *Document) Delete() error {
 func (c *Collection) Delete() error {
 	// check if there was an error
 	if is, err := c.Check(); is {
-		return fmt.Errorf("sometething has failed previously, use c.Check() to check for errors: %s", err.Error())
+		return fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error())
 	}
 
 	return delete(c.dir)
