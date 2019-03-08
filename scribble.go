@@ -12,17 +12,19 @@ import (
 )
 
 // Version is the current version of the project
-const Version = "4.4.0"
+const Version = "4.4.1"
 
 type (
 	//Collection a collection of documents
 	Collection struct {
-		dir string // the directory where scribble will create the database
+		ID  string
+		dir string
 		err error
 	}
 
 	//Document a single document which can have sub collections
 	Document struct {
+		ID  string
 		dir string
 		err error
 	}
@@ -76,11 +78,10 @@ func (c *Collection) Document(key string) *Document {
 
 	dir := filepath.Join(c.dir, key)
 
-	document := Document{
+	return &Document{
+		ID:  key,
 		dir: dir,
 	}
-
-	return &document
 }
 
 //Collection gets a collction from in a document
@@ -101,18 +102,20 @@ func (d *Document) Collection(name string) *Collection {
 
 	dir := filepath.Join(d.dir, name)
 
-	collection := Collection{
+	return &Collection{
+		ID:  name,
 		dir: dir,
 	}
-
-	return &collection
 }
 
 // Write locks the database and attempts to write the record to the database under
 // the [collection] specified with the [resource] name given
 func (d *Document) Write(v interface{}) error {
+	var err error
+	var is bool
+
 	// check if there was an error
-	if is, err := d.Check(); is {
+	if is, err = d.Check(); is {
 		return fmt.Errorf("sometething has failed previously, use c.Check() to check for errors: %s", err.Error())
 	}
 
@@ -121,26 +124,20 @@ func (d *Document) Write(v interface{}) error {
 		return fmt.Errorf("missing document - no place to save record")
 	}
 
-	if _, err := os.Stat(d.dir); err != nil {
-		if err := os.MkdirAll(d.dir, 0755); err != nil {
-			return err
-		}
+	if err = os.MkdirAll(d.dir, 0755); err != nil {
+		return err
 	}
 
 	mutex := getMutex(d.dir)
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	dir := d.dir
-	fnlPath := filepath.Join(dir, "doc.gob")
-	tmpPath := fnlPath + ".tmp"
+	finalPath := filepath.Join(d.dir, "doc.gob")
+	tempPath := finalPath + ".tmp"
 
-	// create collection directory
-	if err := os.MkdirAll(dir, 0755); err != nil {
-		return err
-	}
+	var b *os.File
 
-	b, err := os.Create(tmpPath)
+	b, err = os.Create(tempPath)
 	if err != nil {
 		return err
 	}
@@ -151,13 +148,21 @@ func (d *Document) Write(v interface{}) error {
 	}
 
 	// move final file into place
-	return os.Rename(tmpPath, fnlPath)
+	err = os.Rename(tempPath, finalPath)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Read a record from the database
 func (d *Document) Read(v interface{}) error {
+	var err error
+	var is bool
+
 	// check if there was an error
-	if is, err := d.Check(); is {
+	if is, err = d.Check(); is {
 		return fmt.Errorf("sometething has failed previously, use c.Check() to check for errors: %s", err.Error())
 	}
 
@@ -166,34 +171,27 @@ func (d *Document) Read(v interface{}) error {
 		return fmt.Errorf("missing collection - no place to save record")
 	}
 
-	//
-	record := filepath.Join(d.dir, "doc.gob")
-
-	// check to see if file exists
-	if _, err := os.Stat(record); err != nil {
-		return err
-	}
+	var b *os.File
 
 	// read record from database
-	b, err := os.Open(record)
+	b, err = os.Open(filepath.Join(d.dir, "doc.gob"))
 	if err != nil {
 		return err
 	}
 
 	// decode data
-	dec := gob.NewDecoder(b)
 	if rv, ok := v.(reflect.Value); ok {
-		err = dec.DecodeValue(rv)
-		if err == nil {
+		err = gob.NewDecoder(b).DecodeValue(rv)
+		if err != nil {
 			return err
 		}
-
 	} else {
-		err = dec.Decode(v)
-		if err == nil {
+		err = gob.NewDecoder(b).Decode(v)
+		if err != nil {
 			return err
 		}
 	}
+
 	return nil
 }
 
@@ -206,7 +204,6 @@ func getDocuments(dir string, start, end int) ([]*Document, error) {
 
 	// check to see if collection (directory) exists
 	if _, err := os.Stat(dir); err != nil {
-		fmt.Println("2: ", err)
 		return nil, err
 	}
 

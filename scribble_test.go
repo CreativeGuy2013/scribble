@@ -1,6 +1,8 @@
 package scribble
 
 import (
+	"encoding/gob"
+	"io/ioutil"
 	"math/rand"
 	"os"
 	"testing"
@@ -225,9 +227,16 @@ func BenchmarkWrite(b *testing.B) {
 	collection := db.Collection("fish")
 
 	b.ResetTimer()
+	b.ReportAllocs()
+	b.StartTimer()
 
-	for x, d := range data {
-		collection.Document(x).Write(d)
+	for x := range data {
+		b.StopTimer()
+		os.MkdirAll("./deep/fish/"+x, 0755)
+
+		b.StartTimer()
+
+		collection.Document(x).Write(data[x])
 	}
 
 	b.StopTimer()
@@ -245,9 +254,13 @@ func BenchmarkRead(b *testing.B) {
 	}
 
 	b.ResetTimer()
+	b.ReportAllocs()
+	b.StartTimer()
+
+	var da interface{}
 
 	for x := range data {
-		collection.Document(x).Read(nil)
+		collection.Document(x).Read(da)
 	}
 
 	b.StopTimer()
@@ -274,4 +287,105 @@ func generateData(n int) (data map[string]*Fish) {
 	}
 
 	return
+}
+
+func BenchmarkWriteNative(b *testing.B) {
+	os.RemoveAll("./native")
+
+	data := generateData(b.N)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	b.StartTimer()
+
+	for x, d := range data {
+		ioutil.WriteFile("./native/"+x, []byte(d.Type+d.Type), 0666)
+	}
+
+	b.StopTimer()
+	os.RemoveAll("./native")
+}
+
+func BenchmarkWriteNativeStream(b *testing.B) {
+	os.RemoveAll("./native")
+
+	data := generateData(b.N)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	b.StartTimer()
+
+	for x, d := range data {
+		f, _ := os.Create("./native/" + x)
+
+		gob.NewEncoder(f).Encode(d)
+
+		f.Close()
+
+		// move final file into place
+	}
+
+	b.StopTimer()
+	os.RemoveAll("./native")
+}
+
+var g interface{}
+
+func BenchmarkReadNative(b *testing.B) {
+	os.RemoveAll("./native")
+
+	data := generateData(b.N)
+
+	for x, d := range data {
+		ioutil.WriteFile("./native/"+x, []byte(d.Type+d.Type), 0666)
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	b.StartTimer()
+
+	for x, _ := range data {
+		p, _ := ioutil.ReadFile("./native/" + x)
+		g = p
+
+	}
+
+	b.StopTimer()
+	os.RemoveAll("./native")
+}
+
+func BenchmarkReadNativeStream(b *testing.B) {
+	os.RemoveAll("./native")
+
+	data := generateData(b.N)
+
+	for x, d := range data {
+		f, _ := os.Create("./native/" + x)
+
+		gob.NewEncoder(f).Encode(d)
+
+		f.Close()
+
+		// move final file into place
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	b.StartTimer()
+
+	for x, _ := range data {
+		f, _ := os.Open("./native/" + x)
+
+		var p interface{}
+		gob.NewDecoder(f).Decode(p)
+
+		g = p
+
+		f.Close()
+
+		// move final file into place
+	}
+
+	b.StopTimer()
+	os.RemoveAll("./native")
 }
