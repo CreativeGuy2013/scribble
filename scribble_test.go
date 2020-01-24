@@ -352,7 +352,7 @@ func BenchmarkReadNative(b *testing.B) {
 	b.ReportAllocs()
 	b.StartTimer()
 
-	for x, _ := range data {
+	for x := range data {
 		p, _ := ioutil.ReadFile("./native/" + x)
 		g = p
 
@@ -381,7 +381,7 @@ func BenchmarkReadNativeStream(b *testing.B) {
 	b.ReportAllocs()
 	b.StartTimer()
 
-	for x, _ := range data {
+	for x := range data {
 		f, _ := os.Open("./native/" + x)
 
 		var p interface{}
