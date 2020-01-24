@@ -1,4 +1,4 @@
-Scribble (FireScribble Edition) [![GoDoc](https://godoc.org/github.com/boltdb/bolt?status.svg)](http://godoc.org/github.com/creativeguy2013/scribble) [![Go Report Card](https://goreportcard.com/badge/github.com/creativeguy2013/scribble)](https://goreportcard.com/report/github.com/creativeguy2013/scribble) [![Build Status](https://travis-ci.org/creativeguy2013/scribble.svg?branch=master)](https://travis-ci.org/creativeguy2013/scribble)
+Scribble (FireScribble Edition) [![GoDoc](https://godoc.org/github.com/creativeguy2013/scribble?status.svg)](http://godoc.org/github.com/creativeguy2013/scribble) [![Go Report Card](https://goreportcard.com/badge/github.com/creativeguy2013/scribble)](https://goreportcard.com/report/github.com/creativeguy2013/scribble) [![ci](https://github.com/lucacasonato/scribble/workflows/ci/badge.svg)](https://github.com/lucacasonato/scribble/actions)
 --------
 
 A tiny GOB based database in Golang - behaviour is very similar to Google Cloud Firestore
