@@ -135,9 +135,8 @@ func (d *Document) Write(v interface{}) error {
 	finalPath := filepath.Join(d.dir, "doc.gob")
 	tempPath := finalPath + ".tmp"
 
-	var b *os.File
-
-	b, err = os.Create(tempPath)
+	b, err := os.Create(tempPath)
+	defer b.Close()
 	if err != nil {
 		return err
 	}
@@ -175,6 +174,7 @@ func (d *Document) Read(v interface{}) error {
 
 	// read record from database
 	b, err = os.Open(filepath.Join(d.dir, "doc.gob"))
+	defer b.Close()
 	if err != nil {
 		return err
 	}
@@ -328,7 +328,11 @@ func (d *Document) PreGen() (bool, error) {
 
 	_, err := os.Stat(d.dir)
 	if os.IsNotExist(err) {
-		os.Create(filepath.Join(d.dir, "doc.gob"))
+		b, err := os.Create(filepath.Join(d.dir, "doc.gob"))
+		defer b.Close()
+		if err != nil {
+			return true, err
+		}
 		return false, nil
 	}
 
