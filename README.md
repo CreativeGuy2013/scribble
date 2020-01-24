@@ -1,5 +1,6 @@
-Scribble (FireScribble Edition) [![GoDoc](https://godoc.org/github.com/creativeguy2013/scribble?status.svg)](http://godoc.org/github.com/creativeguy2013/scribble) [![Go Report Card](https://goreportcard.com/badge/github.com/creativeguy2013/scribble)](https://goreportcard.com/report/github.com/creativeguy2013/scribble) [![ci](https://github.com/lucacasonato/scribble/workflows/ci/badge.svg)](https://github.com/lucacasonato/scribble/actions)
---------
+## scribble
+
+[![GoDoc](https://godoc.org/github.com/lucacasonato/scribble?status.svg)](http://godoc.org/github.com/lucacasonato/scribble) [![Go Report Card](https://goreportcard.com/badge/github.com/lucacasonato/scribble)](https://goreportcard.com/report/github.com/lucacasonato/scribble) [![ci](https://github.com/lucacasonato/scribble/workflows/ci/badge.svg)](https://github.com/lucacasonato/scribble/actions)
 
 A tiny GOB based database in Golang - behaviour is very similar to Google Cloud Firestore
 
@@ -10,7 +11,7 @@ If you would rather use JSON instad of GOB please use a version prior to 3.0.0. 
 
 ### Installation
 
-Install using `go get github.com/creativeguy2013/scribble`.
+Install using `go get github.com/lucacasonato/scribble`.
 
 ### Usage
 
@@ -102,12 +103,13 @@ starFish.Write(map[string]bool{
 starFish.Collection("properties").Document("arms").Write(6)
 ```
 
-
 ## Documentation
-- Complete documentation is available on [godoc](http://godoc.org/github.com/creativeguy2013/scribble).
-- Coverage Report is available on [gocover](https://gocover.io/github.com/creativeguy2013/scribble)
+
+- Complete documentation is available on [godoc](http://godoc.org/github.com/lucacasonato/scribble).
+- Coverage Report is available on [gocover](https://gocover.io/github.com/lucacasonato/scribble)
 
 ## Todo/Doing
+
 - Support for windows
 - More methods to allow different types of reads/writes
 - More tests (you can never have enough!)
