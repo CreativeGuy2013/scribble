@@ -14,7 +14,7 @@ import (
 )
 
 // Version is the current version of the project
-const Version = "4.4.1"
+const Version = "4.5.1"
 
 type (
 	//Collection a collection of documents
