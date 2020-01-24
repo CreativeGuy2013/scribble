@@ -1,9 +1,11 @@
-// Package scribble is a tiny gob database
+// Package scribble is a tiny gob/json database
 package scribble
 
 import (
 	"encoding/gob"
+	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -20,6 +22,7 @@ type (
 		ID  string
 		dir string
 		err error
+		e   encoder
 	}
 
 	//Document a single document which can have sub collections
@@ -27,6 +30,7 @@ type (
 		ID  string
 		dir string
 		err error
+		e   encoder
 	}
 )
 
@@ -36,29 +40,39 @@ var (
 )
 
 // New creates a new scribble database at the desired directory location, and
-// returns a *Driver to then use for interacting with the database
+// returns a *Document to then use for interacting with the database
 func New(dir string) (*Document, error) {
+	return new(dir, gobEncoder{})
+}
+
+// NewJSON creates a new json scribble database at the desired directory location, and
+// returns a *Document to then use for interacting with the database
+func NewJSON(dir string) (*Document, error) {
+	return new(dir, jsonEncoder{})
+}
+
+func new(dir string, e encoder) (*Document, error) {
 	//Clean the filepath before using it
 	dir = filepath.Clean(dir)
 
 	document := Document{
 		dir: dir,
+		e:   e,
 	}
 
 	// if the collection doesn't exist create it
-	if _, err := os.Stat(filepath.Join(document.dir, "doc.gob")); err == nil {
+	if _, err := os.Stat(filepath.Join(document.dir, "doc."+document.e.extension())); err == nil {
 		return &document, nil
 	}
 
 	if _, err := os.Stat(document.dir); err != nil {
 		if err := os.MkdirAll(document.dir, 0755); err != nil {
-			fmt.Println(err.Error())
 			return nil, err
 		}
 	}
 
 	// if the document doesn't exist create it
-	return &document, ioutil.WriteFile(filepath.Join(document.dir, "doc.gob"), []byte("{}"), 0644)
+	return &document, ioutil.WriteFile(filepath.Join(document.dir, "doc."+document.e.extension()), []byte("{}"), 0644)
 }
 
 //Document gets a document from a collection
@@ -67,12 +81,14 @@ func (c *Collection) Document(key string) *Document {
 		return &Document{
 			dir: "",
 			err: fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error()),
+			e:   c.e,
 		}
 	}
 	if key == "" {
 		return &Document{
 			dir: "",
 			err: fmt.Errorf("key for document is empty"),
+			e:   c.e,
 		}
 	}
 
@@ -81,6 +97,7 @@ func (c *Collection) Document(key string) *Document {
 	return &Document{
 		ID:  key,
 		dir: dir,
+		e:   c.e,
 	}
 }
 
@@ -90,6 +107,7 @@ func (d *Document) Collection(name string) *Collection {
 		return &Collection{
 			dir: "",
 			err: fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error()),
+			e:   d.e,
 		}
 	}
 
@@ -97,6 +115,7 @@ func (d *Document) Collection(name string) *Collection {
 		return &Collection{
 			dir: "",
 			err: fmt.Errorf("name for collection is empty"),
+			e:   d.e,
 		}
 	}
 
@@ -105,6 +124,7 @@ func (d *Document) Collection(name string) *Collection {
 	return &Collection{
 		ID:  name,
 		dir: dir,
+		e:   d.e,
 	}
 }
 
@@ -132,7 +152,7 @@ func (d *Document) Write(v interface{}) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 
-	finalPath := filepath.Join(d.dir, "doc.gob")
+	finalPath := filepath.Join(d.dir, "doc."+d.e.extension())
 	tempPath := finalPath + ".tmp"
 
 	b, err := os.Create(tempPath)
@@ -141,7 +161,7 @@ func (d *Document) Write(v interface{}) error {
 		return err
 	}
 
-	err = gob.NewEncoder(b).Encode(v)
+	err = d.e.encode(b, v)
 	if err != nil {
 		return err
 	}
@@ -173,30 +193,23 @@ func (d *Document) Read(v interface{}) error {
 	var b *os.File
 
 	// read record from database
-	b, err = os.Open(filepath.Join(d.dir, "doc.gob"))
+	b, err = os.Open(filepath.Join(d.dir, "doc."+d.e.extension()))
 	defer b.Close()
 	if err != nil {
 		return err
 	}
 
 	// decode data
-	if rv, ok := v.(reflect.Value); ok {
-		err = gob.NewDecoder(b).DecodeValue(rv)
-		if err != nil {
-			return err
-		}
-	} else {
-		err = gob.NewDecoder(b).Decode(v)
-		if err != nil {
-			return err
-		}
+	err = d.e.decode(b, v)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
 // GetDocuments gets documents in a collection starting from start til end, if start
-func getDocuments(dir string, start, end int) ([]*Document, error) {
+func getDocuments(dir string, start, end int, e encoder) ([]*Document, error) {
 	// check to see if collection (directory) exists
 	if file, err := os.Stat(dir); err != nil || !file.IsDir() {
 		return nil, err
@@ -227,6 +240,7 @@ func getDocuments(dir string, start, end int) ([]*Document, error) {
 	for i, file := range files {
 		records[i] = &Document{
 			dir: filepath.Join(dir, file.Name()),
+			e:   e,
 		}
 	}
 
@@ -239,7 +253,7 @@ func (c *Collection) GetAllDocuments() ([]*Document, error) {
 	if is, err := c.Check(); is {
 		return nil, fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error())
 	}
-	return getDocuments(c.dir, 0, 0)
+	return getDocuments(c.dir, 0, 0, c.e)
 }
 
 // GetDocuments gets documents in a collection starting from start til end, if start
@@ -247,7 +261,7 @@ func (c *Collection) GetDocuments(start, end int) ([]*Document, error) {
 	if is, err := c.Check(); is {
 		return nil, fmt.Errorf("something has failed previously, use c.Check() to check for errors: %s", err.Error())
 	}
-	return getDocuments(c.dir, start, end)
+	return getDocuments(c.dir, start, end, c.e)
 }
 
 func delete(dir string) error {
@@ -328,7 +342,7 @@ func (d *Document) PreGen() (bool, error) {
 
 	_, err := os.Stat(d.dir)
 	if os.IsNotExist(err) {
-		b, err := os.Create(filepath.Join(d.dir, "doc.gob"))
+		b, err := os.Create(filepath.Join(d.dir, "doc."+d.e.extension()))
 		defer b.Close()
 		if err != nil {
 			return true, err
@@ -356,4 +370,37 @@ func getMutex(dir string) *sync.Mutex {
 		return fileMutexes[dir]
 	}
 	return m
+}
+
+type encoder interface {
+	extension() string
+	encode(io.Writer, interface{}) error
+	decode(io.Reader, interface{}) error
+}
+
+type gobEncoder struct{}
+
+func (e gobEncoder) extension() string {
+	return "gob"
+}
+func (e gobEncoder) encode(b io.Writer, v interface{}) error {
+	return gob.NewEncoder(b).Encode(v)
+}
+func (e gobEncoder) decode(b io.Reader, v interface{}) error {
+	if rv, ok := v.(reflect.Value); ok {
+		return gob.NewDecoder(b).DecodeValue(rv)
+	}
+	return gob.NewDecoder(b).Decode(v)
+}
+
+type jsonEncoder struct{}
+
+func (e jsonEncoder) extension() string {
+	return "json"
+}
+func (e jsonEncoder) encode(b io.Writer, v interface{}) error {
+	return json.NewEncoder(b).Encode(v)
+}
+func (e jsonEncoder) decode(b io.Reader, v interface{}) error {
+	return json.NewDecoder(b).Decode(v)
 }

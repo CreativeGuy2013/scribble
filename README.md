@@ -2,12 +2,9 @@
 
 [![GoDoc](https://godoc.org/github.com/lucacasonato/scribble?status.svg)](http://godoc.org/github.com/lucacasonato/scribble) [![Go Report Card](https://goreportcard.com/badge/github.com/lucacasonato/scribble)](https://goreportcard.com/report/github.com/lucacasonato/scribble) [![ci](https://github.com/lucacasonato/scribble/workflows/ci/badge.svg)](https://github.com/lucacasonato/scribble/actions)
 
-A tiny GOB based database in Golang - behaviour is very similar to Google Cloud Firestore
+A tiny GOB (or JSON) based database in Golang - behaviour is very similar to Google Cloud Firestore
 
-Decode into reflect.Value is also supported
-
-**Note**
-If you would rather use JSON instad of GOB please use a version prior to 3.0.0. You will have less functionality and a slower db but it will be human readable.
+Decode into reflect.Value is also supported (only in GOB mode).
 
 ### Installation
 
@@ -101,6 +98,18 @@ starFish.Write(map[string]bool{
 })
 
 starFish.Collection("properties").Document("arms").Write(6)
+```
+
+## JSON mode
+
+Scribble also has a JSON mode that writes JSON files instead of GOB. In this mode there is no support for decoding into reflect.Value though.
+
+```go
+// a new scribble document, providing the directory where it will be writing to
+db, err := scribble.NewJSON(dir)
+if err != nil {
+  fmt.Println("Error", err)
+}
 ```
 
 ## Documentation
