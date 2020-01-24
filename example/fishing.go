@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	scribble "github.com/creativeguy2013/scribble"
+	"github.com/lucacasonato/scribble"
 )
 
 //Fish is a fish struct

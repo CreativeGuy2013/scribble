@@ -1,4 +1,4 @@
-package scribble
+package scribble_test
 
 import (
 	"encoding/gob"
@@ -6,6 +6,8 @@ import (
 	"math/rand"
 	"os"
 	"testing"
+
+	"github.com/lucacasonato/scribble"
 )
 
 type Fish struct {
@@ -13,7 +15,7 @@ type Fish struct {
 }
 
 var (
-	db         *Document
+	db         *scribble.Document
 	database   = "./deep/school"
 	collection = "fish"
 	onefish    = Fish{}
@@ -185,8 +187,14 @@ func TestDeleteall(t *testing.T) {
 // create a new scribble database
 func createDB() error {
 	var err error
-	if db, err = New(database); err != nil {
-		return err
+	if os.Getenv("SCRIBBLE_TEST_JSON") == "1" {
+		if db, err = scribble.NewJSON(database); err != nil {
+			return err
+		}
+	} else {
+		if db, err = scribble.New(database); err != nil {
+			return err
+		}
 	}
 
 	return nil

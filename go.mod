@@ -1,3 +1,3 @@
-module github.com/creativeguy2013/scribble
+module github.com/lucacasonato/scribble
 
-go 1.12
+go 1.13

@@ -1,16 +1,14 @@
-Scribble (FireScribble Edition) [![GoDoc](https://godoc.org/github.com/boltdb/bolt?status.svg)](http://godoc.org/github.com/creativeguy2013/scribble) [![Go Report Card](https://goreportcard.com/badge/github.com/creativeguy2013/scribble)](https://goreportcard.com/report/github.com/creativeguy2013/scribble) [![Build Status](https://travis-ci.org/creativeguy2013/scribble.svg?branch=master)](https://travis-ci.org/creativeguy2013/scribble)
---------
+## scribble
 
-A tiny GOB based database in Golang - behaviour is very similar to Google Cloud Firestore
+[![GoDoc](https://godoc.org/github.com/lucacasonato/scribble?status.svg)](http://godoc.org/github.com/lucacasonato/scribble) [![Go Report Card](https://goreportcard.com/badge/github.com/lucacasonato/scribble)](https://goreportcard.com/report/github.com/lucacasonato/scribble) [![ci](https://github.com/lucacasonato/scribble/workflows/ci/badge.svg)](https://github.com/lucacasonato/scribble/actions)
 
-Decode into reflect.Value is also supported
+A tiny GOB (or JSON) based database in Golang - behaviour is very similar to Google Cloud Firestore
 
-**Note**
-If you would rather use JSON instad of GOB please use a version prior to 3.0.0. You will have less functionality and a slower db but it will be human readable.
+Decode into reflect.Value is also supported (only in GOB mode).
 
 ### Installation
 
-Install using `go get github.com/creativeguy2013/scribble`.
+Install using `go get github.com/lucacasonato/scribble`.
 
 ### Usage
 
@@ -102,12 +100,25 @@ starFish.Write(map[string]bool{
 starFish.Collection("properties").Document("arms").Write(6)
 ```
 
+## JSON mode
+
+Scribble also has a JSON mode that writes JSON files instead of GOB. In this mode there is no support for decoding into reflect.Value though.
+
+```go
+// a new scribble document, providing the directory where it will be writing to
+db, err := scribble.NewJSON(dir)
+if err != nil {
+  fmt.Println("Error", err)
+}
+```
 
 ## Documentation
-- Complete documentation is available on [godoc](http://godoc.org/github.com/creativeguy2013/scribble).
-- Coverage Report is available on [gocover](https://gocover.io/github.com/creativeguy2013/scribble)
+
+- Complete documentation is available on [godoc](http://godoc.org/github.com/lucacasonato/scribble).
+- Coverage Report is available on [gocover](https://gocover.io/github.com/lucacasonato/scribble)
 
 ## Todo/Doing
+
 - Support for windows
 - More methods to allow different types of reads/writes
 - More tests (you can never have enough!)
