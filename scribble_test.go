@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/lucacasonato/scribble"
+	"github.com/lucacasonato/scribble/v4"
 )
 
 type Fish struct {

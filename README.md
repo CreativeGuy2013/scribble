@@ -1,6 +1,6 @@
 ## scribble
 
-[![GoDoc](https://godoc.org/github.com/lucacasonato/scribble?status.svg)](http://godoc.org/github.com/lucacasonato/scribble) [![Go Report Card](https://goreportcard.com/badge/github.com/lucacasonato/scribble)](https://goreportcard.com/report/github.com/lucacasonato/scribble) [![ci](https://github.com/lucacasonato/scribble/workflows/ci/badge.svg)](https://github.com/lucacasonato/scribble/actions)
+[![GoDoc](https://godoc.org/github.com/lucacasonato/scribble/v4?status.svg)](http://godoc.org/github.com/lucacasonato/scribble/v4) [![Go Report Card](https://goreportcard.com/badge/github.com/lucacasonato/scribble/v4)](https://goreportcard.com/report/github.com/lucacasonato/scribble/v4) [![ci](https://github.com/lucacasonato/scribble/workflows/ci/badge.svg)](https://github.com/lucacasonato/scribble/actions)
 
 A tiny GOB (or JSON) based database in Golang - behaviour is very similar to Google Cloud Firestore
 
@@ -8,7 +8,7 @@ Decode into reflect.Value is also supported (only in GOB mode).
 
 ### Installation
 
-Install using `go get github.com/lucacasonato/scribble`.
+Install using `go get github.com/lucacasonato/scribble/v4`.
 
 ### Usage
 
@@ -114,8 +114,8 @@ if err != nil {
 
 ## Documentation
 
-- Complete documentation is available on [godoc](http://godoc.org/github.com/lucacasonato/scribble).
-- Coverage Report is available on [gocover](https://gocover.io/github.com/lucacasonato/scribble)
+- Complete documentation is available on [godoc](http://godoc.org/github.com/lucacasonato/scribble/v4).
+- Coverage Report is available on [gocover](https://gocover.io/github.com/lucacasonato/scribble/v4)
 
 ## Todo/Doing
 
