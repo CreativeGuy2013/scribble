@@ -22,20 +22,24 @@ jobs:
           go fmt ./...
           go vet ./...
           git diff --exit-code
-      - name: Unit tests gob
+      - name: Unit tests with GOB
         run: |
-          go test -race -short ./...
-      - name: Unit tests json
+          go test -race -short -covermode atomic -coverprofile=coverage_gob.cov ./...
+      - name: Send GOB coverage
+        if: contains(matrix.os, 'linux')
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage_json.cov
+          parallel: true
+      - name: Unit tests with JSON
         run: |
-          go test -race -short ./...
+          go test -race -short -covermode atomic -coverprofile=coverage_json.cov ./...
         env:
           SCRIBBLE_TEST_JSON: "1"
-      - name: Coverage
-        run: |
-          go test -covermode=count -coverprofile=coverage.cov ./...
-          go tool cover -html=coverage.cov -o=coverage.html
-      - name: Upload artifact
-        uses: actions/upload-artifact@v1.0.0
+      - name: Send JSON coverage
+        if: contains(matrix.os, 'linux')
+        uses: shogo82148/actions-goveralls@v1
         with:
-          name: Coverage
-          path: coverage.html
+          path-to-profile: coverage_json.cov
+          parallel: true
+          parallel-finished: true
