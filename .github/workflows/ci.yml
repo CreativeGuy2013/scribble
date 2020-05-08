@@ -2,13 +2,17 @@ name: ci
 on: [push]
 jobs:
   test:
-    name: Test
-    runs-on: ubuntu-latest
+    name: Test ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
     steps:
-      - name: Set up Go 1.13
+      - name: Set up Go 1.14
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13
+          go-version: 1.14
       - name: Check out code
         uses: actions/checkout@v1
       - name: Get dependencies
@@ -18,20 +22,26 @@ jobs:
           go fmt ./...
           go vet ./...
           git diff --exit-code
-      - name: Unit tests
+      - name: Unit tests with GOB
         run: |
-          go test -short ./...
-          SCRIBBLE_TEST_JSON=1 go test -short ./...
-      - name: Test race conditions
-        run: |
-          go test -race -short ./...
-          SCRIBBLE_TEST_JSON=1 go test -short -race ./...
-      - name: Coverage
-        run: |
-          go test -covermode=count -coverprofile=coverage.cov ./...
-          go tool cover -html=coverage.cov -o=coverage.html
-      - name: Upload artifact
-        uses: actions/upload-artifact@v1.0.0
+          go test -race -short -covermode atomic -coverprofile coverage_gob.cov ./...
+      - name: Send GOB coverage
+        if: contains(matrix.os, 'ubuntu')
+        uses: shogo82148/actions-goveralls@v1
         with:
-          name: Coverage
-          path: coverage.html
+          path-to-profile: coverage_gob.cov
+          job-number: 0
+          parallel: true
+      - name: Unit tests with JSON
+        run: |
+          go test -race -short -covermode atomic -coverprofile coverage_json.cov ./...
+        env:
+          SCRIBBLE_TEST_JSON: "1"
+      - name: Send JSON coverage
+        if: contains(matrix.os, 'ubuntu')
+        uses: shogo82148/actions-goveralls@v1
+        with:
+          path-to-profile: coverage_json.cov
+          job-number: 1
+          parallel: true
+          parallel-finished: true

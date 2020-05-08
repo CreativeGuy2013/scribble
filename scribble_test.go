@@ -2,6 +2,7 @@ package scribble_test
 
 import (
 	"encoding/gob"
+	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -41,6 +42,13 @@ func TestMain(m *testing.M) {
 
 // Tests creating a new database, and using an existing database
 func TestNew(t *testing.T) {
+
+	if os.Getenv("SCRIBBLE_TEST_JSON") == "1" {
+		fmt.Println("Testing JSON")
+	} else {
+		fmt.Println("Testing GOB")
+	}
+
 	// database should not exist
 	if _, err := os.Stat(database); err == nil {
 		t.Error("Expected nothing, got database")
