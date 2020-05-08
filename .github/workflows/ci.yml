@@ -29,7 +29,7 @@ jobs:
         if: contains(matrix.os, 'ubuntu')
         uses: shogo82148/actions-goveralls@v1
         with:
-          path-to-profile: coverage_json.cov
+          path-to-profile: coverage_gob.cov
           parallel: true
       - name: Unit tests with JSON
         run: |
