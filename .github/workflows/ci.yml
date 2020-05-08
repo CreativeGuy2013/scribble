@@ -9,10 +9,10 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
-      - name: Set up Go 1.13
+      - name: Set up Go 1.14
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13
+          go-version: 1.14
       - name: Check out code
         uses: actions/checkout@v1
       - name: Get dependencies
@@ -22,14 +22,14 @@ jobs:
           go fmt ./...
           go vet ./...
           git diff --exit-code
-      - name: Unit tests
-        run: |
-          go test -short ./...
-          SCRIBBLE_TEST_JSON=1 go test -short ./...
-      - name: Test race conditions
+      - name: Unit tests gob
         run: |
           go test -race -short ./...
-          SCRIBBLE_TEST_JSON=1 go test -short -race ./...
+      - name: Unit tests json
+        run: |
+          go test -race -short ./...
+        env:
+          SCRIBBLE_TEST_JSON: "1"
       - name: Coverage
         run: |
           go test -covermode=count -coverprofile=coverage.cov ./...
