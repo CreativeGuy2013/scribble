@@ -24,7 +24,7 @@ jobs:
           git diff --exit-code
       - name: Unit tests with GOB
         run: |
-          go test -race -short -covermode atomic -coverprofile=coverage_gob.cov ./...
+          go test -race -short -covermode atomic -coverprofile coverage_gob.cov ./...
       - name: Send GOB coverage
         if: contains(matrix.os, 'linux')
         uses: shogo82148/actions-goveralls@v1
@@ -33,7 +33,7 @@ jobs:
           parallel: true
       - name: Unit tests with JSON
         run: |
-          go test -race -short -covermode atomic -coverprofile=coverage_json.cov ./...
+          go test -race -short -covermode atomic -coverprofile coverage_json.cov ./...
         env:
           SCRIBBLE_TEST_JSON: "1"
       - name: Send JSON coverage
