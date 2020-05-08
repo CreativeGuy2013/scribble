@@ -166,6 +166,8 @@ func (d *Document) Write(v interface{}) error {
 		return err
 	}
 
+	b.Close()
+
 	// move final file into place
 	err = os.Rename(tempPath, finalPath)
 	if err != nil {
