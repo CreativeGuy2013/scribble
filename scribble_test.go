@@ -107,6 +107,12 @@ func TestGetAllDocuments(t *testing.T) {
 		t.Error("Expected some fish, have none")
 	}
 
+	for _, f := range fish {
+		if f.ID == "" {
+			t.Error("ID is not present")
+		}
+	}
+
 	destroySchool()
 }
 

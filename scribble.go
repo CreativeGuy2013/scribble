@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 )
 
@@ -241,6 +242,7 @@ func getDocuments(dir string, start, end int, e encoder) ([]*Document, error) {
 	// iterate over each of the files, and add the resulting document to records
 	for i, file := range files {
 		records[i] = &Document{
+			ID:  strings.TrimSuffix(file.Name(), "."+e.extension()),
 			dir: filepath.Join(dir, file.Name()),
 			e:   e,
 		}
